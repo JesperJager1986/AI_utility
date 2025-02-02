@@ -1,26 +1,28 @@
 import requests
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import os
 
+
+
 @dataclass()
 class FileDownloader:
-    def __init__(self, path: str, store_path: str | None = None):
-        self.path: str = path
-        self.response = None
-        self.store_file = Path("download") / Path(path).name if store_path is None else Path(store_path)
+    path: str
+    store_file: Path | None = field(init=False) # Todo find better reference method to root
 
     def __post_init__(self):
+        root = Path(os.getenv("PROJECT_ROOT", Path(__file__).resolve().parents[4]))
+        self.store_file = root / "download"
         self.create_folder()
-        self.response= requests.get(self.path)
+        self.download()
 
     def create_folder(self):
-        os.makedirs(self.path, exist_ok=True)
+        os.makedirs(str(self.store_file), exist_ok=True)
 
     def download(self):
         response = requests.get(self.path)
         if response.status_code == 200:
-            with open(self.store_file, "wb") as file:
+            with open(str(self.store_file / Path(self.path).name), "wb") as file:
                 file.write(response.content)
             print(f"File downloaded successfully: {self.store_file}")
         else:
@@ -31,3 +33,5 @@ if __name__ == "__main__":
     url = "https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_gl.csv"
 
     loader = FileDownloader(url)
+
+    print(2)
